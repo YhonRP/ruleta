@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruleta 150</title>
+    <title>Ruleta Ganadora 150</title>
     <style>
         body {
             display: flex;
@@ -12,71 +12,103 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #111;
+            background-color: #0b0b0b;
             color: #fff;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            overflow: hidden; /* Para que el confeti no cree barras de scroll */
         }
 
-        /* Contenedor principal */
         .ruleta-wrapper {
             position: relative;
-            width: 400px;
-            height: 400px;
+            width: 450px;
+            height: 450px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            border-radius: 50%;
         }
 
-        /* La flecha roja */
         .flecha {
             position: absolute;
-            top: -20px;
+            top: -25px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-top: 35px solid red;
-            z-index: 999;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 45px solid #ff4757;
+            z-index: 1000;
+            filter: drop-shadow(0 0 5px rgba(255,0,0,0.5));
         }
 
-        /* La rueda física */
         #rueda {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            border: 8px solid #444;
-            background: #222;
+            border: 10px solid #333;
+            background: #1a1a1a;
             position: relative;
-            transition: transform 5s cubic-bezier(0.2, 0, 0, 1);
+            transition: transform 6s cubic-bezier(0.1, 0, 0.1, 1);
             overflow: hidden;
         }
 
-        /* Los números */
         .num-container {
             position: absolute;
             width: 100%;
             height: 100%;
             text-align: center;
             transform-origin: center;
-            font-size: 7px;
-            padding-top: 10px;
+            font-size: 8px;
+            padding-top: 15px;
             box-sizing: border-box;
-            color: #aaa;
+            color: #888;
         }
 
         button {
             margin-top: 40px;
-            padding: 15px 40px;
-            font-size: 20px;
-            background: #27ae60;
+            padding: 18px 60px;
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 50px;
             cursor: pointer;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+            transition: transform 0.2s;
+            z-index: 10;
         }
 
-        button:disabled { background: #555; }
+        button:active { transform: scale(0.95); }
+        button:disabled { background: #444; box-shadow: none; cursor: not-allowed; }
 
-        #txt { margin-top: 20px; font-size: 24px; color: #27ae60; height: 30px; }
+        /* Estilo del Número Ganador */
+        #resultado-pantalla {
+            margin-top: 30px;
+            font-size: 48px;
+            font-weight: bold;
+            color: #f1c40f;
+            text-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
+            height: 60px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* Clase para el confeti */
+        .confeti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            z-index: 999;
+            top: -10px;
+            border-radius: 2px;
+            animation: caer 3s linear forwards;
+        }
+
+        @keyframes caer {
+            to { transform: translateY(100vh) rotate(720deg); }
+        }
     </style>
 </head>
 <body>
@@ -86,16 +118,16 @@
         <div id="rueda"></div>
     </div>
 
-    <button id="btn" onclick="lanzar()">GIRAR RULETA</button>
-    <div id="txt"></div>
+    <button id="btn" onclick="lanzar()">¡GIRAR!</button>
+    <div id="resultado-pantalla"></div>
 
     <script>
-        // Inicializar rueda con 150 números
         const rueda = document.getElementById('rueda');
         const btn = document.getElementById('btn');
-        const txt = document.getElementById('txt');
+        const display = document.getElementById('resultado-pantalla');
         let gradosTotales = 0;
 
+        // Crear números (1 al 150)
         for (let i = 1; i <= 150; i++) {
             const div = document.createElement('div');
             div.className = 'num-container';
@@ -105,32 +137,53 @@
         }
 
         function lanzar() {
-            // Desactivar botón para evitar doble clic
             btn.disabled = true;
-            txt.innerText = "Girando...";
+            display.style.opacity = "0";
+            display.innerText = "";
 
-            // Elegir resultado (80 o 59)
-            const opciones = [80, 59];
-            const ganador = opciones[Math.floor(Math.random() * opciones.length)];
+            // Truco: Siempre 80 o 59
+            const ganadores = [80, 59];
+            const ganador = ganadores[Math.floor(Math.random() * ganadores.length)];
 
-            // Cálculo matemático para alinear el número bajo la flecha
             const gradosPorNumero = 360 / 150;
             const anguloGanador = (ganador - 1) * gradosPorNumero;
             
-            // Añadir 10 vueltas (3600) + compensación
+            // Giro de 10 vueltas + ajuste
             const vueltas = 3600;
             const reset = 360 - (gradosTotales % 360);
-            
             gradosTotales += reset + vueltas - anguloGanador;
 
-            // Mover la rueda
             rueda.style.transform = `rotate(${gradosTotales}deg)`;
 
-            // Mostrar resultado después de 5 segundos
+            // Al finalizar el giro (6 segundos)
             setTimeout(() => {
-                txt.innerText = "¡Salió el " + ganador + "!";
+                // Mostrar número ganador
+                display.innerText = "¡NÚMERO " + ganador + "!";
+                display.style.opacity = "1";
+                
+                // Lanzar confeti
+                crearConfeti();
+                
                 btn.disabled = false;
-            }, 5000);
+            }, 6000);
+        }
+
+        function crearConfeti() {
+            const colores = ['#f1c40f', '#e67e22', '#2ecc71', '#3498db', '#e74c3c'];
+            for (let i = 0; i < 100; i++) {
+                const confeti = document.createElement('div');
+                confeti.className = 'confeti';
+                confeti.style.left = Math.random() * 100 + "vw";
+                confeti.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
+                confeti.style.width = (Math.random() * 8 + 4) + "px";
+                confeti.style.height = confeti.style.width;
+                confeti.style.animationDuration = (Math.random() * 2 + 2) + "s";
+                confeti.style.opacity = Math.random();
+                document.body.appendChild(confeti);
+
+                // Limpiar el confeti del código después de que caiga
+                setTimeout(() => confeti.remove(), 4000);
+            }
         }
     </script>
 </body>
