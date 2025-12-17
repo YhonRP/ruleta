@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruleta 150 - Versión Final</title>
+    <title>Ruleta 1-150</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body {
             display: flex;
@@ -14,39 +15,39 @@
             margin: 0;
             background-color: #121212;
             color: white;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: system-ui, -apple-system, sans-serif;
         }
 
-        .contenedor {
+        .ruleta-box {
             position: relative;
             width: 500px;
             height: 500px;
-            margin-top: 20px;
+            max-width: 90vw;
+            max-height: 90vw;
         }
 
         .flecha {
             position: absolute;
-            top: -30px;
+            top: -25px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
             border-left: 20px solid transparent;
             border-right: 20px solid transparent;
-            border-top: 50px solid #ff4757;
-            z-index: 100;
-            filter: drop-shadow(0 0 10px rgba(255, 71, 87, 0.5));
+            border-top: 45px solid #ff4757;
+            z-index: 10;
         }
 
         #rueda {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            border: 12px solid #333;
-            position: relative;
+            border: 10px solid #333;
             background: #1e1e1e;
+            position: relative;
             transition: transform 5s cubic-bezier(0.1, 0, 0.1, 1);
-            transform: rotate(0deg);
+            overflow: hidden;
         }
 
         .numero {
@@ -56,98 +57,96 @@
             text-align: center;
             transform-origin: center;
             font-size: 8px;
-            padding-top: 12px;
+            padding-top: 15px;
             box-sizing: border-box;
             color: #888;
         }
 
         button {
             margin-top: 40px;
-            padding: 20px 60px;
-            font-size: 24px;
+            padding: 15px 50px;
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
-            background: #2ed573;
+            background: #00ff88;
             color: #000;
             border: none;
             border-radius: 50px;
-            box-shadow: 0 0 20px rgba(46, 213, 115, 0.4);
-            transition: 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
         }
 
-        button:active { transform: scale(0.95); }
-        button:disabled { background: #444; color: #888; box-shadow: none; cursor: not-allowed; }
+        button:disabled {
+            background: #444;
+            color: #777;
+            box-shadow: none;
+        }
 
         #resultado {
             margin-top: 20px;
-            font-size: 35px;
+            font-size: 32px;
             font-weight: bold;
-            color: #2ed573;
-            height: 50px;
+            color: #00ff88;
+            height: 40px;
         }
     </style>
 </head>
 <body>
 
-    <div class="contenedor">
+    <div class="ruleta-box">
         <div class="flecha"></div>
         <div id="rueda"></div>
     </div>
 
-    <button id="btn-girar" onclick="lanzar()">GIRAR AHORA</button>
+    <button id="btn-girar">GIRAR RULETA</button>
     <div id="resultado"></div>
 
     <script>
         const rueda = document.getElementById('rueda');
         const btn = document.getElementById('btn-girar');
-        const display = document.getElementById('resultado');
-        const totalNumeros = 150;
-        
-        // Estado global para que no falle
-        let totalGrados = 0;
+        const res = document.getElementById('resultado');
+        const total = 150;
+        let rotacion = 0;
 
-        // Crear los 150 números de forma limpia
-        for (let i = 1; i <= totalNumeros; i++) {
-            const div = document.createElement('div');
-            div.className = 'numero';
-            div.style.transform = `rotate(${(i - 1) * (360 / totalNumeros)}deg)`;
-            div.innerHTML = i;
-            rueda.appendChild(div);
+        // Crear números
+        for (let i = 1; i <= total; i++) {
+            const el = document.createElement('div');
+            el.className = 'numero';
+            el.style.transform = `rotate(${(i - 1) * (360 / total)}deg)`;
+            el.innerHTML = i;
+            rueda.appendChild(el);
         }
 
-        function lanzar() {
+        btn.onclick = () => {
             btn.disabled = true;
-            display.innerText = "¡Girando...";
+            res.innerText = "¡Girando!";
 
-            // 1. Decisión (80 o 59)
-            const ganadores = [80, 59];
-            const elegido = ganadores[Math.floor(Math.random() * ganadores.length)];
+            // Truco: Elegir 80 o 59
+            const premios = [80, 59];
+            const final = premios[Math.floor(Math.random() * premios.length)];
 
-            // 2. Cálculos exactos
-            const gradosPorNumero = 360 / totalNumeros;
+            // Cálculo para que caiga EXACTO bajo la flecha
+            const gradosPorNum = 360 / total;
+            const destino = (final - 1) * gradosPorNum;
             
-            // Queremos que el número suba al marcador (0 grados). 
-            // Para eso, necesitamos restar su posición actual al giro.
-            const anguloDelNumero = (elegido - 1) * gradosPorNumero;
+            // Sumar 10 vueltas + compensar posición actual
+            const vueltas = 3600;
+            const reset = 360 - (rotacion % 360);
+            rotacion += reset + vueltas - destino;
 
-            // 3. Giro Infinito:
-            // Sumamos 3600 grados (10 vueltas) para asegurar movimiento.
-            // Restamos el ángulo del número para que caiga exacto.
-            // El "truco" es sumar siempre al total acumulado para que el navegador no se confunda.
-            const vueltas = 3600; 
-            const ajusteActual = 360 - (totalGrados % 360); // Volver a "cero" virtual
-            
-            totalGrados += ajusteActual + vueltas - anguloDelNumero;
+            rueda.style.transform = `rotate(${rotacion}deg)`;
 
-            // 4. Ejecutar rotación
-            rueda.style.transform = `rotate(${totalGrados}deg)`;
-
-            // 5. Finalización
             setTimeout(() => {
-                display.innerText = "Salió el: " + elegido;
+                res.innerText = "Salió el " + final;
                 btn.disabled = false;
+                
+                // Efecto confeti
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
             }, 5200);
-        }
+        };
     </script>
 </body>
 </html>
