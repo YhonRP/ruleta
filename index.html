@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruleta Ganadora 150</title>
+    <title>Selector de Números 1-150</title>
     <style>
         body {
             display: flex;
@@ -12,177 +12,145 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #0b0b0b;
-            color: #fff;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            overflow: hidden; /* Para que el confeti no cree barras de scroll */
-        }
-
-        .ruleta-wrapper {
-            position: relative;
-            width: 450px;
-            height: 450px;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-            border-radius: 50%;
-        }
-
-        .flecha {
-            position: absolute;
-            top: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-top: 45px solid #ff4757;
-            z-index: 1000;
-            filter: drop-shadow(0 0 5px rgba(255,0,0,0.5));
-        }
-
-        #rueda {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 10px solid #333;
-            background: #1a1a1a;
-            position: relative;
-            transition: transform 6s cubic-bezier(0.1, 0, 0.1, 1);
+            background-color: #0d0d0d;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
             overflow: hidden;
         }
 
-        .num-container {
+        h1 { margin-bottom: 30px; color: #555; text-transform: uppercase; letter-spacing: 2px; }
+
+        /* El cuadro visor */
+        .visor {
+            width: 200px;
+            height: 120px;
+            border: 4px solid #00ff88;
+            border-radius: 15px;
+            background-color: #1a1a1a;
+            position: relative;
+            overflow: hidden; /* Esconde los números que no están en el centro */
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+        }
+
+        /* La tira de números que se mueve */
+        .tira-numeros {
             position: absolute;
             width: 100%;
-            height: 100%;
-            text-align: center;
-            transform-origin: center;
-            font-size: 8px;
-            padding-top: 15px;
-            box-sizing: border-box;
-            color: #888;
+            top: 0;
+            transition: top 4s cubic-bezier(0.15, 0, 0.15, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .item-numero {
+            height: 120px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            font-weight: bold;
+            color: #fff;
         }
 
         button {
-            margin-top: 40px;
-            padding: 18px 60px;
-            font-size: 24px;
+            margin-top: 50px;
+            padding: 15px 50px;
+            font-size: 20px;
             font-weight: bold;
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-            color: white;
-            border: none;
-            border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
-            transition: transform 0.2s;
-            z-index: 10;
+            background: #00ff88;
+            color: black;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 0 #009e54;
+            transition: 0.1s;
         }
 
-        button:active { transform: scale(0.95); }
-        button:disabled { background: #444; box-shadow: none; cursor: not-allowed; }
+        button:active { transform: translateY(4px); box-shadow: none; }
+        button:disabled { background: #333; color: #666; box-shadow: none; cursor: not-allowed; }
 
-        /* Estilo del Número Ganador */
-        #resultado-pantalla {
-            margin-top: 30px;
-            font-size: 48px;
-            font-weight: bold;
-            color: #f1c40f;
-            text-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
-            height: 60px;
-            text-align: center;
-            opacity: 0;
-            transition: opacity 0.5s;
-        }
-
-        /* Clase para el confeti */
-        .confeti {
+        /* Confeti */
+        .pabilo {
             position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: #f00;
-            z-index: 999;
+            width: 8px;
+            height: 8px;
             top: -10px;
-            border-radius: 2px;
-            animation: caer 3s linear forwards;
+            animation: lluvia 3s linear forwards;
         }
-
-        @keyframes caer {
-            to { transform: translateY(100vh) rotate(720deg); }
-        }
+        @keyframes lluvia { to { transform: translateY(100vh) rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div class="ruleta-wrapper">
-        <div class="flecha"></div>
-        <div id="rueda"></div>
+    <h1>Número Ganador</h1>
+
+    <div class="visor">
+        <div id="tira" class="tira-numeros">
+            </div>
     </div>
 
-    <button id="btn" onclick="lanzar()">¡GIRAR!</button>
-    <div id="resultado-pantalla"></div>
+    <button id="btn-jugar" onclick="iniciarSorteo()">¡SORTEAR!</button>
 
     <script>
-        const rueda = document.getElementById('rueda');
-        const btn = document.getElementById('btn');
-        const display = document.getElementById('resultado-pantalla');
-        let gradosTotales = 0;
+        const tira = document.getElementById('tira');
+        const btn = document.getElementById('btn-jugar');
+        const altoVisor = 120; // Debe coincidir con el CSS
 
-        // Crear números (1 al 150)
-        for (let i = 1; i <= 150; i++) {
-            const div = document.createElement('div');
-            div.className = 'num-container';
-            div.style.transform = `rotate(${(i - 1) * (360 / 150)}deg)`;
-            div.innerHTML = i;
-            rueda.appendChild(div);
+        // Generamos una lista larga de números para que parezca que giran mucho
+        // Repetiremos los números varias veces para crear el efecto de scroll
+        function generarNumeros() {
+            let contenido = "";
+            // Ponemos 5 ciclos de 1 a 150
+            for(let vuelta = 0; vuelta < 5; vuelta++) {
+                for(let i = 1; i <= 150; i++) {
+                    contenido += `<div class="item-numero">${i}</div>`;
+                }
+            }
+            tira.innerHTML = contenido;
         }
 
-        function lanzar() {
+        generarNumeros();
+
+        function iniciarSorteo() {
             btn.disabled = true;
-            display.style.opacity = "0";
-            display.innerText = "";
-
-            // Truco: Siempre 80 o 59
-            const ganadores = [80, 59];
-            const ganador = ganadores[Math.floor(Math.random() * ganadores.length)];
-
-            const gradosPorNumero = 360 / 150;
-            const anguloGanador = (ganador - 1) * gradosPorNumero;
             
-            // Giro de 10 vueltas + ajuste
-            const vueltas = 3600;
-            const reset = 360 - (gradosTotales % 360);
-            gradosTotales += reset + vueltas - anguloGanador;
+            // Elegir resultado trucado
+            const opciones = [80, 59];
+            const elegido = opciones[Math.floor(Math.random() * opciones.length)];
 
-            rueda.style.transform = `rotate(${gradosTotales}deg)`;
+            // Para que parezca real, saltamos a la última "vuelta" de la tira
+            // Calculamos la posición: (vueltas_previas * 150 + (numero - 1)) * alto_del_cuadro
+            const vueltaFinal = 4; 
+            const posicionFinal = (vueltaFinal * 150 + (elegido - 1)) * altoVisor;
 
-            // Al finalizar el giro (6 segundos)
+            // Reiniciamos la posición visualmente sin animación primero para poder repetir
+            tira.style.transition = "none";
+            tira.style.top = "0px";
+
+            // Forzamos un pequeño delay para que la transición de arriba funcione
             setTimeout(() => {
-                // Mostrar número ganador
-                display.innerText = "¡NÚMERO " + ganador + "!";
-                display.style.opacity = "1";
-                
-                // Lanzar confeti
-                crearConfeti();
-                
+                tira.style.transition = "top 4s cubic-bezier(0.15, 0, 0.15, 1)";
+                tira.style.top = `-${posicionFinal}px`;
+            }, 50);
+
+            // Al terminar la animación
+            setTimeout(() => {
+                soltarConfeti();
                 btn.disabled = false;
-            }, 6000);
+            }, 4100);
         }
 
-        function crearConfeti() {
-            const colores = ['#f1c40f', '#e67e22', '#2ecc71', '#3498db', '#e74c3c'];
-            for (let i = 0; i < 100; i++) {
-                const confeti = document.createElement('div');
-                confeti.className = 'confeti';
-                confeti.style.left = Math.random() * 100 + "vw";
-                confeti.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
-                confeti.style.width = (Math.random() * 8 + 4) + "px";
-                confeti.style.height = confeti.style.width;
-                confeti.style.animationDuration = (Math.random() * 2 + 2) + "s";
-                confeti.style.opacity = Math.random();
-                document.body.appendChild(confeti);
-
-                // Limpiar el confeti del código después de que caiga
-                setTimeout(() => confeti.remove(), 4000);
+        function soltarConfeti() {
+            const colores = ['#00ff88', '#ffffff', '#00bfff', '#ff0055'];
+            for (let i = 0; i < 80; i++) {
+                const p = document.createElement('div');
+                p.className = 'pabilo';
+                p.style.left = Math.random() * 100 + "vw";
+                p.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
+                p.style.animationDuration = (Math.random() * 2 + 1) + "s";
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 3000);
             }
         }
     </script>
