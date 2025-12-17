@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruleta 150 Exacta</title>
+    <title>Ruleta 150 - Versión Final</title>
     <style>
         body {
             display: flex;
@@ -12,39 +12,41 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #1a1a1a;
+            background-color: #121212;
             color: white;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
         }
 
         .contenedor {
             position: relative;
-            width: 550px;
-            height: 550px;
+            width: 500px;
+            height: 500px;
+            margin-top: 20px;
         }
 
-        /* Flecha indicadora superior */
         .flecha {
             position: absolute;
-            top: -25px;
+            top: -30px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
             border-left: 20px solid transparent;
             border-right: 20px solid transparent;
-            border-top: 45px solid #ff0000;
+            border-top: 50px solid #ff4757;
             z-index: 100;
+            filter: drop-shadow(0 0 10px rgba(255, 71, 87, 0.5));
         }
 
         #rueda {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            border: 10px solid #444;
+            border: 12px solid #333;
             position: relative;
-            background: #222;
-            transition: transform 6s cubic-bezier(0.1, 0, 0.1, 1);
+            background: #1e1e1e;
+            transition: transform 5s cubic-bezier(0.1, 0, 0.1, 1);
+            transform: rotate(0deg);
         }
 
         .numero {
@@ -53,42 +55,35 @@
             height: 100%;
             text-align: center;
             transform-origin: center;
-            font-size: 9px;
-            padding-top: 15px;
+            font-size: 8px;
+            padding-top: 12px;
             box-sizing: border-box;
-            color: #ddd;
+            color: #888;
         }
 
         button {
-            margin-top: 30px;
+            margin-top: 40px;
             padding: 20px 60px;
             font-size: 24px;
             font-weight: bold;
             cursor: pointer;
-            background-color: #e67e22;
-            color: white;
+            background: #2ed573;
+            color: #000;
             border: none;
-            border-radius: 12px;
-            box-shadow: 0 5px #d35400;
+            border-radius: 50px;
+            box-shadow: 0 0 20px rgba(46, 213, 115, 0.4);
+            transition: 0.2s;
         }
 
-        button:active {
-            transform: translateY(4px);
-            box-shadow: none;
-        }
-
-        button:disabled {
-            background-color: #555;
-            box-shadow: none;
-            cursor: not-allowed;
-        }
+        button:active { transform: scale(0.95); }
+        button:disabled { background: #444; color: #888; box-shadow: none; cursor: not-allowed; }
 
         #resultado {
-            margin-top: 25px;
+            margin-top: 20px;
             font-size: 35px;
             font-weight: bold;
-            color: #f1c40f;
-            height: 45px;
+            color: #2ed573;
+            height: 50px;
         }
     </style>
 </head>
@@ -99,7 +94,7 @@
         <div id="rueda"></div>
     </div>
 
-    <button id="btn-girar" onclick="girar()">GIRAR RULETA</button>
+    <button id="btn-girar" onclick="lanzar()">GIRAR AHORA</button>
     <div id="resultado"></div>
 
     <script>
@@ -107,48 +102,51 @@
         const btn = document.getElementById('btn-girar');
         const display = document.getElementById('resultado');
         const totalNumeros = 150;
-        let gradosActuales = 0;
+        
+        // Estado global para que no falle
+        let totalGrados = 0;
 
-        // Crear los 150 números
+        // Crear los 150 números de forma limpia
         for (let i = 1; i <= totalNumeros; i++) {
             const div = document.createElement('div');
             div.className = 'numero';
-            // Colocamos los números alrededor de la rueda
             div.style.transform = `rotate(${(i - 1) * (360 / totalNumeros)}deg)`;
             div.innerHTML = i;
             rueda.appendChild(div);
         }
 
-        function girar() {
+        function lanzar() {
             btn.disabled = true;
-            display.innerText = "¡Mucha suerte!";
+            display.innerText = "¡Girando...";
 
-            // 1. Elegir resultado trucado
-            const opciones = [80, 59];
-            const elegido = opciones[Math.floor(Math.random() * opciones.length)];
+            // 1. Decisión (80 o 59)
+            const ganadores = [80, 59];
+            const elegido = ganadores[Math.floor(Math.random() * ganadores.length)];
 
-            // 2. Lógica de rotación exacta
+            // 2. Cálculos exactos
             const gradosPorNumero = 360 / totalNumeros;
             
-            // Calculamos cuánto debe girar para que el número elegido quede a 0 grados (arriba)
-            // Restamos el ángulo del número elegido para "traerlo" al marcador
-            const anguloDeCompensacion = (elegido - 1) * gradosPorNumero;
+            // Queremos que el número suba al marcador (0 grados). 
+            // Para eso, necesitamos restar su posición actual al giro.
+            const anguloDelNumero = (elegido - 1) * gradosPorNumero;
+
+            // 3. Giro Infinito:
+            // Sumamos 3600 grados (10 vueltas) para asegurar movimiento.
+            // Restamos el ángulo del número para que caiga exacto.
+            // El "truco" es sumar siempre al total acumulado para que el navegador no se confunda.
+            const vueltas = 3600; 
+            const ajusteActual = 360 - (totalGrados % 360); // Volver a "cero" virtual
             
-            // Damos 8 vueltas completas (2880 grados) para que se vea rápido
-            const vueltasExtra = 2880; 
+            totalGrados += ajusteActual + vueltas - anguloDelNumero;
 
-            // Sumamos a la rotación acumulada para que siempre gire hacia adelante
-            // La fórmula: vueltas + (lo que falta para completar el círculo actual) - posición del número
-            const circuloCompleto = 360 - (gradosActuales % 360);
-            gradosActuales += circuloCompleto + vueltasExtra - anguloDeCompensacion;
+            // 4. Ejecutar rotación
+            rueda.style.transform = `rotate(${totalGrados}deg)`;
 
-            rueda.style.transform = `rotate(${gradosActuales}deg)`;
-
-            // 3. Mostrar el número ganador
+            // 5. Finalización
             setTimeout(() => {
-                display.innerText = "NÚMERO: " + elegido;
+                display.innerText = "Salió el: " + elegido;
                 btn.disabled = false;
-            }, 6000); // Espera a que termine la animación de 6 segundos
+            }, 5200);
         }
     </script>
 </body>
